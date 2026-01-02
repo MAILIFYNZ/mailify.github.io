@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mailify</title>
+
+<style>
+/* =====================
+   THEME VARIABLES
+===================== */
+:root {
+  --bg: #f8fafc;
+  --card: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --accent: #4f46e5;
+}
+
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --card: #1e293b;
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+  --border: #334155;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* =====================
+   NAVBAR
+===================== */
+nav {
+  position: sticky;
+  top: 0;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  z-index: 100;
+}
+
+.nav-inner {
+  max-width: 1200px;
+  margin: auto;
+  padding: 0 16px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--accent);
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: white;
+}
+
+.nav-links a {
+  margin-left: 20px;
+  text-decoration: none;
+  color: var(--muted);
+  font-weight: 500;
+}
+.nav-links a.active {
+  color: var(--accent);
+}
+
+/* =====================
+   USER MENU
+===================== */
+.user-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: #e0e7ff;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.dropdown {
+  position: absolute;
+  right: 16px;
+  top: 64px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 220px;
+  display: none;
+  box-shadow: 0 10px 30px rgba(0,0,0,.1);
+}
+
+.dropdown.open { display: block; }
+
+.dropdown div {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.dropdown button {
+  width: 100%;
+  padding: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+.dropdown button:hover {
+  background: rgba(0,0,0,.05);
+}
+
+/* =====================
+   MAIN
+===================== */
+main {
+  max-width: 1200px;
+  margin: auto;
+  padding: 24px 16px;
+}
+</style>
+</head>
+
+<body>
+<nav>
+  <div class="nav-inner">
+    <a class="logo" href="index.html">
+      <div class="logo-icon">✉</div>
+      Mailify
+    </a>
+
+    <div class="nav-links">
+      <a href="index.html" id="nav-dashboard">Dashboard</a>
+    </div>
+
+    <div style="position:relative">
+      <button class="user-btn" id="userBtn">U</button>
+
+      <div class="dropdown" id="userMenu">
+        <div>
+          <strong id="userName">User</strong><br>
+          <small id="userEmail"></small>
+        </div>
+        <button onclick="openSettings()">⚙ Settings</button>
+        <button onclick="logout()" style="color:#dc2626">⎋ Sign out</button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<main id="app">
+  <!-- PAGE CONTENT GOES HERE -->
+</main>
+
+<!-- =====================
+     SETTINGS MODAL
+===================== -->
+<div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6)">
+  <div style="background:var(--card);max-width:400px;margin:10% auto;padding:20px;border-radius:12px">
+    <h3>Settings</h3>
+
+    <label>
+      Theme:
+      <select id="themeSelect">
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+      </select>
+    </label>
+
+    <br><br>
+
+    <label>
+      Wallpaper URL:
+      <input id="wallpaperInput" placeholder="https://..." style="width:100%">
+    </label>
+
+    <br><br>
+
+    <button onclick="saveSettings()">Save</button>
+    <button onclick="closeSettings()">Close</button>
+  </div>
+</div>
+
+<script>
+/* =====================
+   SAFE STORAGE
+===================== */
+function safeJSON(key, fallback) {
+  try {
+    return JSON.parse(localStorage.getItem(key)) ?? fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+/* =====================
+   USER AUTH (CLIENT)
+===================== */
+const user = safeJSON("user", {
+  name: "User",
+  email: "guest@mailify.local"
+});
+
+document.getElementById("userName").textContent = user.name;
+document.getElementById("userEmail").textContent = user.email;
+document.getElementById("userBtn").textContent =
+  user.name.split(" ").map(x=>x[0]).join("").slice(0,2).toUpperCase();
+
+/* =====================
+   DROPDOWN
+===================== */
+document.getElementById("userBtn").onclick = () => {
+  document.getElementById("userMenu").classList.toggle("open");
+};
+
+/* =====================
+   THEME
+===================== */
+const settings = safeJSON("settings", { theme:"light", wallpaper:"" });
+document.documentElement.dataset.theme = settings.theme;
+if (settings.wallpaper) {
+  document.body.style.backgroundImage = `url(${settings.wallpaper})`;
+  document.body.style.backgroundSize = "cover";
+  document.body.style.backgroundAttachment = "fixed";
+}
+
+function openSettings() {
+  document.getElementById("settingsModal").style.display = "block";
+  document.getElementById("themeSelect").value = settings.theme;
+  document.getElementById("wallpaperInput").value = settings.wallpaper;
+}
+
+function closeSettings() {
+  document.getElementById("settingsModal").style.display = "none";
+}
+
+function saveSettings() {
+  settings.theme = document.getElementById("themeSelect").value;
+  settings.wallpaper = document.getElementById("wallpaperInput").value;
+  localStorage.setItem("settings", JSON.stringify(settings));
+  location.reload();
+}
+
+function logout() {
+  localStorage.removeItem("user");
+  location.reload();
+}
+</script>
+</body>
+</html>
